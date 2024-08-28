@@ -3,7 +3,7 @@ from flask_cors import CORS
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import chromedriver_autoinstaller
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -12,9 +12,6 @@ from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
-
-# Ensure ChromeDriver is installed
-chromedriver_autoinstaller.install()
 
 # List of predefined products
 products_list = [
@@ -39,10 +36,9 @@ def scrape_data():
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.binary_location = "/usr/local/share/chrome/chrome"
 
-    # Initialize WebDriver
-    driver = webdriver.Chrome(options=options)
+    # Initialize WebDriver using ChromeDriverManager
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     results = []
     

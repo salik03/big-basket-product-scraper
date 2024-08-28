@@ -1,9 +1,4 @@
-streamlit
-selenium
-pandas
-webdriver-manager
-xlsxwriter
 flask
 flask-cors
-gunicorn
-chromedriver-autoinstaller
+selenium
+webdriver-manager
