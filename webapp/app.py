@@ -16,7 +16,7 @@ def main():
     if st.button("Start Scraping"):
         progress_bar = st.progress(0)
 
-        response = requests.get("http://127.0.0.1:5000/scrape")
+        response = requests.get("https://product-scraper-tlp5.onrender.com/scrape")
 
         if response.status_code == 200:
             results = response.json()

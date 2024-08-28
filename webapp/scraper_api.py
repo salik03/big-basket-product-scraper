@@ -1,9 +1,9 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS  # Import CORS
+from flask import Flask, jsonify
+from flask_cors import CORS
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
+import chromedriver_autoinstaller  # Import this package to handle ChromeDriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -12,6 +12,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
+
+# Ensure ChromeDriver is installed
+chromedriver_autoinstaller.install()
 
 # List of predefined products
 products_list = [
@@ -30,9 +33,16 @@ products_list = [
 
 @app.route('/scrape', methods=['GET'])
 def scrape_data():
+    # Set up Chrome options for headless operation
     options = Options()
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.binary_location = "/usr/bin/chromium-browser"
+
+    # Initialize WebDriver
+    driver = webdriver.Chrome(options=options)
     
     results = []
     
@@ -42,7 +52,7 @@ def scrape_data():
         try:
             driver.get(f"https://www.bigbasket.com/ps/?q={query}")
 
-            wait = WebDriverWait(driver, 10)  # 10 seconds wait time
+            wait = WebDriverWait(driver, 10)
             wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')))
 
             items_list = driver.find_elements(By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')
