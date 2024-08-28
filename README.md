@@ -1,6 +1,3 @@
-Here's a `README.md` file for your `bigbasket-scraper` repository, including a detailed description and usage instructions:
-
-```markdown
 # BigBasket Scraper
 
 This repository contains a Streamlit application that scrapes product data from BigBasket using Selenium. The application provides a user-friendly interface to initiate scraping, shows a progress bar, and allows users to download the scraped data as an Excel file.
