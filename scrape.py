@@ -29,7 +29,7 @@ products_list = [
 def scrape_data(update_progress):
     # Set up Selenium WebDriver once
     options = Options()
-    # options.add_argument('--headless')  # Run in headless mode
+    options.add_argument('--headless')  # Run in headless mode
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
