@@ -65,9 +65,3 @@ For any questions or issues, please contact uddinsalik@outlook.com.
 Thank you for using the BigBasket Scraper! If you find this tool useful, consider starring the repository to show your support.
 
 ```
-
-### Notes:
-- Replace `https://github.com/your-username/bigbasket-scraper.git` with the actual URL of your repository.
-- Update the contact email to your actual email address.
-- Add or modify sections as needed based on your specific use case or preferences.
-```
