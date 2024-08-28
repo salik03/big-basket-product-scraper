@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 
-apt-get update && apt-get install -y \
-    chromium-browser \
-    chromium-chromedriver \
+# Create a directory for Chrome installation
+mkdir -p /opt/chrome
+
+# Download and install Chromium
+apt-get update && apt-get install -y wget
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O /opt/chrome/chrome.deb
+apt-get install -y /opt/chrome/chrome.deb
+
+# Ensure ChromeDriver is installed
+chromedriver_autoinstaller.install()
+
+# Optionally, you can install additional dependencies
+apt-get install -y \
     libnss3 \
     libgconf-2-4 \
     libxss1 \
@@ -20,5 +30,3 @@ apt-get update && apt-get install -y \
     libatk1.0-0 \
     libcups2 \
     libgtk-3-0
-
-ln -s /usr/bin/chromium-browser /usr/bin/google-chrome
