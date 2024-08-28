@@ -70,8 +70,9 @@ def scrape_data(update_progress, update_data_display):
                     }
                     results.append(result)
 
-                    # Update the display incrementally
+                    # Update the display incrementally with the current product
                     update_data_display(pd.DataFrame([result]))
+
                 except NoSuchElementException:
                     continue
 
@@ -105,7 +106,7 @@ def main():
 
         # Function to update the data display incrementally
         def update_data_display(new_data):
-            current_data = data_placeholder.dataframe(new_data, height=1)
+            data_placeholder.dataframe(new_data, height=1)  # Adjust height as needed
 
         # Scrape the data
         df = scrape_data(update_progress, update_data_display)
@@ -113,6 +114,10 @@ def main():
         # Ensure progress bar reaches 100%
         progress_bar.progress(100)
         progress_text.text("Scraping completed!")
+
+        # Display the number of products scraped
+        num_scraped_products = len(df)
+        st.write(f"Total products scraped: {num_scraped_products}")
 
         if not df.empty:
             # Allow user to download the complete dataset
