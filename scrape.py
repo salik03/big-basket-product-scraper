@@ -6,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import pandas as pd
 import io
 from datetime import datetime
@@ -26,48 +26,59 @@ products_list = [
     {"product_name": "Coffee Powder"}
 ]
 
-def scrape_data(update_progress):
+def scrape_data(update_progress, update_data_display):
     # Set up Selenium WebDriver once
     options = Options()
-    options.add_argument('--headless')  # Run in headless mode
+    # options.add_argument('--headless')  # Run in headless mode
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
 
     results = []
     num_products = len(products_list)
+    
     for index, product in enumerate(products_list):
         query = product['product_name']
-        driver.get(f"https://www.bigbasket.com/ps/?q={query}")
+        
+        try:
+            driver.get(f"https://www.bigbasket.com/ps/?q={query}")
 
-        # Wait for the elements to load
-        wait = WebDriverWait(driver, 10)  # 10 seconds wait time
-        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')))
+            # Wait for the elements to load
+            wait = WebDriverWait(driver, 10)  # 10 seconds wait time
+            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')))
 
-        # Extract product data
-        items_list = driver.find_elements(By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')
+            # Extract product data
+            items_list = driver.find_elements(By.CSS_SELECTOR, 'li.PaginateItems___StyledLi-sc-1yrbjdr-0.dDBqny')
 
-        for item in items_list:
-            try:
-                company = item.find_element(By.CSS_SELECTOR, "span.BrandName___StyledLabel2-sc-hssfrl-1.gJxZPQ.keQNWn").text
-                specification = item.find_element(By.CSS_SELECTOR, "div.break-words.h-10.w-full h3").text
-                unit = item.find_element(By.CSS_SELECTOR, "span.PackChanger___StyledLabel-sc-newjpv-1.gJxZPQ.cWbtUx").text
-                price = item.find_element(By.CSS_SELECTOR, "span.Pricing___StyledLabel-sc-pldi2d-1.gJxZPQ.AypOi").text
+            for item in items_list:
+                try:
+                    company = item.find_element(By.CSS_SELECTOR, "span.BrandName___StyledLabel2-sc-hssfrl-1.gJxZPQ.keQNWn").text
+                    specification = item.find_element(By.CSS_SELECTOR, "div.break-words.h-10.w-full h3").text
+                    unit = item.find_element(By.CSS_SELECTOR, "span.PackChanger___StyledLabel-sc-newjpv-1.gJxZPQ.cWbtUx").text
+                    price = item.find_element(By.CSS_SELECTOR, "span.Pricing___StyledLabel-sc-pldi2d-1.gJxZPQ.AypOi").text
 
-                # Get the current date and time
-                date_time = datetime.now().strftime("%d.%m.%Y %H:%M")
+                    # Get the current date and time
+                    date_time = datetime.now().strftime("%d.%m.%Y %H:%M")
 
-                # Append to the results list
-                results.append({
-                    "Product Name": product['product_name'],
-                    "Specification": specification,
-                    "Unit": unit,
-                    "Price": price,
-                    "Date & Time of Collection": date_time
-                })
-            except NoSuchElementException:
-                continue
+                    # Append to the results list
+                    result = {
+                        "Product Name": product['product_name'],
+                        "Company": company,
+                        "Specification": specification,
+                        "Unit": unit,
+                        "Price": price,
+                        "Date & Time of Collection": date_time
+                    }
+                    results.append(result)
 
-        # Update progress bar
+                    # Update the display incrementally
+                    update_data_display(pd.DataFrame([result]))
+                except NoSuchElementException:
+                    continue
+
+        except (TimeoutException, Exception):
+            continue
+
+        # Update progress bar with +1% increment
         update_progress((index + 1) / num_products)
 
     driver.quit()
@@ -76,42 +87,48 @@ def scrape_data(update_progress):
 def main():
     st.title("Product Scraper")
 
+    # Placeholder to display the scraped data incrementally
+    data_placeholder = st.empty()
+
+    # Placeholder for the progress bar
+    progress_text = st.empty()
+
     # Button to start scraping
     if st.button("Start Scraping"):
-        with st.spinner('Scraping data...'):
-            # Show a progress bar
-            progress_bar = st.progress(0)
+        progress_bar = st.progress(0)
 
-            # Define a function to update progress
-            def update_progress(progress):
-                progress_bar.progress(progress)
+        # Function to update progress
+        def update_progress(progress):
+            progress_percentage = int(progress * 100)
+            progress_bar.progress(progress_percentage)
+            progress_text.text(f"Progress: {progress_percentage}%")
 
-            df = scrape_data(update_progress)
+        # Function to update the data display incrementally
+        def update_data_display(new_data):
+            current_data = data_placeholder.dataframe(new_data, height=1)
 
-            # Ensure progress bar reaches 100%
-            progress_bar.progress(1.0)
+        # Scrape the data
+        df = scrape_data(update_progress, update_data_display)
 
-            if not df.empty:
-                # Display the DataFrame in Streamlit
-                st.dataframe(df)
+        # Ensure progress bar reaches 100%
+        progress_bar.progress(100)
+        progress_text.text("Scraping completed!")
 
-                # Save the DataFrame to an Excel file in memory
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df.to_excel(writer, index=False)
-                    writer.save()
-                
-                # Display a download button for the Excel file
-                st.download_button(
-                    label="Download data as Excel",
-                    data=output.getvalue(),
-                    file_name="product_data.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            else:
-                st.warning("No products found.")
-    else:
-        st.info("Click the button to start scraping.")
+        if not df.empty:
+            # Allow user to download the complete dataset
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False)
+                writer.save()
+
+            st.download_button(
+                label="Download data as Excel",
+                data=output.getvalue(),
+                file_name="product_data.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        else:
+            st.warning("No products found.")
 
 if __name__ == "__main__":
     main()
